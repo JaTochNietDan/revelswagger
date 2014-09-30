@@ -2,6 +2,7 @@ package revelswagger
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/revel/revel"
 )
@@ -13,11 +14,45 @@ func validateParameters(params []parameter, c *revel.Controller) {
 		if param.Required {
 			c.Validation.Required(c.Params.Get(param.Name)).Message("%s is required.", param.Name)
 		}
+
+		// If the parameter is not required and is not set, then don't validate
+		if !param.Required && c.Params.Get(param.Name) == "" {
+			continue
+		}
+
+		if param.Minimum != nil {
+			var val int
+
+			c.Params.Bind(&val, param.Name)
+
+			c.Validation.Min(val, *param.Minimum).Message("%s has to be at least %d", param.Name, *param.Minimum)
+		}
+
+		if param.Maximum != nil {
+			var val int
+
+			c.Params.Bind(&val, param.Name)
+
+			c.Validation.Max(val, *param.Maximum).Message("%s has to be under %d", param.Name, *param.Maximum)
+		}
+
+		if len(param.Enum) > 0 {
+			val := strings.ToLower(c.Params.Get(param.Name))
+
+			valid := false
+
+			for _, e := range param.Enum {
+				if val == strings.ToLower(e) {
+					valid = true
+					break
+				}
+			}
+
+			if !valid {
+				c.Validation.Error("%s needs to one of '%s'", param.Name, strings.Join(param.Enum, ","))
+			}
+		}
 	}
-}
-
-func required(data string, c *revel.Controller) {
-
 }
 
 func validateType(param parameter, c *revel.Controller) {

@@ -9,8 +9,9 @@ import (
 )
 
 var spec Specification
+var router *revel.Router
 
-func Init(path string) {
+func Init(path string, r *revel.Router) {
 	// We need to load the JSON schema now
 	fmt.Println("[SWAGGER]: Loading schema...")
 
@@ -26,9 +27,18 @@ func Init(path string) {
 	if err != nil {
 		fmt.Println("[SWAGGER]: Error parsing schema file.", err)
 	}
+
+	router = r
 }
 
 func Filter(c *revel.Controller, fc []revel.Filter) {
+	var route *revel.RouteMatch = router.Route(c.Request.Request)
+
+	if route == nil {
+		c.Result = c.NotFound("No matching route found: " + c.Request.RequestURI)
+		return
+	}
+
 	method := spec.Paths[c.Request.URL.Path].Get
 
 	if method == nil {
@@ -36,7 +46,7 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		return
 	}
 
-	if err := c.SetAction("AppController", "Index"); err != nil {
+	if err := c.SetAction(route.ControllerName, route.MethodName); err != nil {
 		c.Result = c.NotFound(err.Error())
 		return
 	}

@@ -35,6 +35,10 @@ type parameter struct {
 	Required    bool
 	Type        string
 	Format      string
+	Minimum     *int
+	Maximum     *int
+	Pattern     string
+	Enum        []string
 }
 
 type response struct {
