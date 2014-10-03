@@ -11,33 +11,36 @@ func validateParameters(params []parameter, c *revel.Controller) {
 	for _, param := range params {
 		validateType(param, c)
 
+		value := c.Request.URL.Query().Get(param.Name)
+
 		if param.Required {
-			c.Validation.Required(c.Params.Get(param.Name)).Message("%s is required.", param.Name)
+			c.Validation.Required(value).Message("%s is required.", param.Name)
+		}
+
+		// If a default is to be set and param is empty, set it.
+		if param.Default != "" && value == "" {
+			c.Params.Route.Set(param.Name, param.Default)
 		}
 
 		// If the parameter is not required and is not set, then don't validate
-		if !param.Required && c.Params.Get(param.Name) == "" {
+		if !param.Required && value == "" {
 			continue
 		}
 
 		if param.Minimum != nil {
-			var val int
-
-			c.Params.Bind(&val, param.Name)
+			val, _ := strconv.Atoi(value)
 
 			c.Validation.Min(val, *param.Minimum).Message("%s has to be at least %d", param.Name, *param.Minimum)
 		}
 
 		if param.Maximum != nil {
-			var val int
-
-			c.Params.Bind(&val, param.Name)
+			val, _ := strconv.Atoi(value)
 
 			c.Validation.Max(val, *param.Maximum).Message("%s has to be under %d", param.Name, *param.Maximum)
 		}
 
 		if len(param.Enum) > 0 {
-			val := strings.ToLower(c.Params.Get(param.Name))
+			val := strings.ToLower(value)
 
 			valid := false
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 
 	"github.com/revel/revel"
 )
@@ -39,7 +40,28 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		return
 	}
 
-	method := spec.Paths[c.Request.URL.Path].Get
+	c.Params.Route = route.Params
+
+	// Add the fixed parameters mapped by name.
+	// TODO: Pre-calculate this mapping.
+	for i, value := range route.FixedParams {
+		if c.Params.Fixed == nil {
+			c.Params.Fixed = make(url.Values)
+		}
+		if i < len(c.MethodType.Args) {
+			arg := c.MethodType.Args[i]
+			c.Params.Fixed.Set(arg.Name, value)
+		} else {
+			fmt.Println("Too many parameters to", route.Action, "trying to add", value)
+			break
+		}
+	}
+
+	leaf, _ := router.Tree.Find(treePath(c.Request.Method, c.Request.URL.Path))
+
+	r := leaf.Value.(*revel.Route)
+
+	method := spec.Paths[r.Path].Get
 
 	if method == nil {
 		c.Result = c.NotFound("No matching route found: " + c.Request.RequestURI)
@@ -66,4 +88,11 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 	}
 
 	fc[0](c, fc[1:])
+}
+
+func treePath(method, path string) string {
+	if method == "*" {
+		method = ":METHOD"
+	}
+	return "/" + method + path
 }

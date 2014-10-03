@@ -39,6 +39,7 @@ type parameter struct {
 	Maximum     *int
 	Pattern     string
 	Enum        []string
+	Default     string
 }
 
 type response struct {
