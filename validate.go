@@ -59,7 +59,7 @@ func validateParameters(params []parameter, c *revel.Controller) {
 }
 
 func validateType(param parameter, c *revel.Controller) {
-	val := c.Params.Get(param.Name)
+	val := c.Request.URL.Query().Get(param.Name)
 
 	// Don't bother checking the type if it's empty
 	// as we'll let the required deal with that first.
@@ -70,7 +70,7 @@ func validateType(param parameter, c *revel.Controller) {
 	var ok bool
 
 	switch param.Type {
-	case "number":
+	case "integer":
 		switch param.Format {
 		case "int32":
 			_, err := strconv.ParseInt(val, 10, 32)
