@@ -40,7 +40,11 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		return
 	}
 
-	c.Params.Route = route.Params
+	if len(route.Params) == 0 {
+		c.Params.Route = map[string][]string{}
+	} else {
+		c.Params.Route = route.Params
+	}
 
 	// Add the fixed parameters mapped by name.
 	// TODO: Pre-calculate this mapping.

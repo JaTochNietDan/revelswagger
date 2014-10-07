@@ -9,9 +9,9 @@ import (
 
 func validateParameters(params []parameter, c *revel.Controller) {
 	for _, param := range params {
-		validateType(param, c)
-
 		value := c.Request.URL.Query().Get(param.Name)
+
+		validateType(value, param, c)
 
 		if param.Required {
 			c.Validation.Required(value).Message("%s is required.", param.Name)
@@ -58,7 +58,7 @@ func validateParameters(params []parameter, c *revel.Controller) {
 	}
 }
 
-func validateType(param parameter, c *revel.Controller) {
+func validateType(value string, param parameter, c *revel.Controller) {
 	val := c.Request.URL.Query().Get(param.Name)
 
 	// Don't bother checking the type if it's empty
