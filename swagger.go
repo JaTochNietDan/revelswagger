@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/url"
 
+	"github.com/howeyc/fsnotify"
 	"github.com/revel/revel"
 )
 
@@ -15,6 +17,16 @@ var router *revel.Router
 func Init(path string, r *revel.Router) {
 	// We need to load the JSON schema now
 	fmt.Println("[SWAGGER]: Loading schema...")
+
+	router = r
+
+	loadSpecFile(path)
+
+	go watchSpecFile(path)
+}
+
+func loadSpecFile(path string) {
+	spec = Specification{}
 
 	content, err := ioutil.ReadFile(path + "\\conf\\spec.json")
 
@@ -28,8 +40,40 @@ func Init(path string, r *revel.Router) {
 	if err != nil {
 		fmt.Println("[SWAGGER]: Error parsing schema file.", err)
 	}
+}
 
-	router = r
+func watchSpecFile(path string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	done := make(chan bool)
+
+	// Process events
+	go func() {
+		for {
+			select {
+			case <-watcher.Event:
+				loadSpecFile(path)
+			case err := <-watcher.Error:
+				fmt.Println("[SWAGGER]: Watcher error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Watch(path + "\\conf\\spec.json")
+
+	if err != nil {
+		fmt.Println("[SWAGGER]: Error watching spec file:", err)
+	} else {
+		fmt.Println("[SWAGGER]: Spec watcher initialized")
+	}
+
+	<-done
+
+	/* ... do stuff ... */
+	watcher.Close()
 }
 
 func Filter(c *revel.Controller, fc []revel.Filter) {
