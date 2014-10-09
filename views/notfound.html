@@ -45,6 +45,12 @@
 			font-family: monospace;
 			color: #333;
 		}
+		code {
+			background-color: grey;
+			padding: 4px;
+			border: 1px solid #000;
+			color: white;
+		}
 	</style>
 	</head>
 	<body>
@@ -53,7 +59,11 @@
 				Couldn't find swagger route
 			</h1>
 			<p>
-				Couldn't find the following path in the swagger spec file: {{.path}}
+				Couldn't find the following path in the swagger spec file: {{.path}}<br /><br />
+				<i>
+					Hint: You can disable strict mode by putting <code>swagger.strict = false</code> into your config file.
+					This will cause only routes that are defined in the spec.json to be validated.
+				</i>
 			</p>
 		</div>
 		<div id="routes" class="block">

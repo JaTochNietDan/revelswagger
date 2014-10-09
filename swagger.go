@@ -120,7 +120,7 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 	if method == nil {
 		// Check if strict mode is enabled and throw an error, otherwise
 		// just move onto the next filter like revel normally would
-		if revel.Config.BoolDefault("swagger.strict", false) {
+		if revel.Config.BoolDefault("swagger.strict", true) {
 			_, filename, _, _ := runtime.Caller(0)
 
 			t, err := template.ParseFiles(path.Dir(filename) + "/views/notfound.html")
