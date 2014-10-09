@@ -91,6 +91,11 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		c.Params.Route = route.Params
 	}
 
+	if err := c.SetAction(route.ControllerName, route.MethodName); err != nil {
+		c.Result = c.NotFound(err.Error())
+		return
+	}
+
 	// Add the fixed parameters mapped by name.
 	// TODO: Pre-calculate this mapping.
 	for i, value := range route.FixedParams {
@@ -113,24 +118,27 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 	method := spec.Paths[r.Path].Get
 
 	if method == nil {
-		_, filename, _, _ := runtime.Caller(0)
+		// Check if strict mode is enabled and throw an error, otherwise
+		// just move onto the next filter like revel normally would
+		if revel.Config.BoolDefault("swagger.strict", false) {
+			_, filename, _, _ := runtime.Caller(0)
 
-		t, err := template.ParseFiles(path.Dir(filename) + "/views/notfound.html")
+			t, err := template.ParseFiles(path.Dir(filename) + "/views/notfound.html")
 
-		if err != nil {
-			panic(err)
+			if err != nil {
+				panic(err)
+			}
+
+			t.Execute(c.Response.Out, map[string]interface{}{
+				"routes": spec.Paths,
+				"path":   c.Request.RequestURI,
+			})
+			return
+		} else {
+			// Move onto the next filter
+			fc[0](c, fc[1:])
+			return
 		}
-
-		t.Execute(c.Response.Out, map[string]interface{}{
-			"routes": spec.Paths,
-			"path":   c.Request.RequestURI,
-		})
-		return
-	}
-
-	if err := c.SetAction(route.ControllerName, route.MethodName); err != nil {
-		c.Result = c.NotFound(err.Error())
-		return
 	}
 
 	// Action has been found & set, let's validate the parameters
