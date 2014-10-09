@@ -6,29 +6,30 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
+	"path"
+	"runtime"
+	"text/template"
 
 	"github.com/howeyc/fsnotify"
 	"github.com/revel/revel"
 )
 
 var spec Specification
-var router *revel.Router
 
-func Init(path string, r *revel.Router) {
-	// We need to load the JSON schema now
-	fmt.Println("[SWAGGER]: Loading schema...")
+func init() {
+	revel.OnAppStart(func() {
+		fmt.Println("[SWAGGER]: Loading schema...")
 
-	router = r
+		loadSpecFile()
 
-	loadSpecFile(path)
-
-	go watchSpecFile(path)
+		go watchSpecFile()
+	})
 }
 
-func loadSpecFile(path string) {
+func loadSpecFile() {
 	spec = Specification{}
 
-	content, err := ioutil.ReadFile(path + "\\conf\\spec.json")
+	content, err := ioutil.ReadFile(revel.BasePath + "\\conf\\spec.json")
 
 	if err != nil {
 		fmt.Println("[SWAGGER]: Couldn't load spec.json.", err)
@@ -42,7 +43,7 @@ func loadSpecFile(path string) {
 	}
 }
 
-func watchSpecFile(path string) {
+func watchSpecFile() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -55,14 +56,14 @@ func watchSpecFile(path string) {
 		for {
 			select {
 			case <-watcher.Event:
-				loadSpecFile(path)
+				loadSpecFile()
 			case err := <-watcher.Error:
 				fmt.Println("[SWAGGER]: Watcher error:", err)
 			}
 		}
 	}()
 
-	err = watcher.Watch(path + "\\conf\\spec.json")
+	err = watcher.Watch(revel.BasePath + "\\conf\\spec.json")
 
 	if err != nil {
 		fmt.Println("[SWAGGER]: Error watching spec file:", err)
@@ -77,7 +78,7 @@ func watchSpecFile(path string) {
 }
 
 func Filter(c *revel.Controller, fc []revel.Filter) {
-	var route *revel.RouteMatch = router.Route(c.Request.Request)
+	var route *revel.RouteMatch = revel.MainRouter.Route(c.Request.Request)
 
 	if route == nil {
 		c.Result = c.NotFound("No matching route found: " + c.Request.RequestURI)
@@ -105,14 +106,25 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		}
 	}
 
-	leaf, _ := router.Tree.Find(treePath(c.Request.Method, c.Request.URL.Path))
+	leaf, _ := revel.MainRouter.Tree.Find(treePath(c.Request.Method, c.Request.URL.Path))
 
 	r := leaf.Value.(*revel.Route)
 
 	method := spec.Paths[r.Path].Get
 
 	if method == nil {
-		c.Result = c.NotFound("No matching route found: " + c.Request.RequestURI)
+		_, filename, _, _ := runtime.Caller(0)
+
+		t, err := template.ParseFiles(path.Dir(filename) + "/views/notfound.html")
+
+		if err != nil {
+			panic(err)
+		}
+
+		t.Execute(c.Response.Out, map[string]interface{}{
+			"routes": spec.Paths,
+			"path":   c.Request.RequestURI,
+		})
 		return
 	}
 
@@ -135,6 +147,7 @@ func Filter(c *revel.Controller, fc []revel.Filter) {
 		return
 	}
 
+	// Move onto the next filter
 	fc[0](c, fc[1:])
 }
 

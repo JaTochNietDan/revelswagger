@@ -7,7 +7,7 @@ type Specification struct {
 	Schemes  []string
 	BasePath string
 	Produces []string
-	Paths    map[string]path
+	Paths    map[string]route
 }
 
 type info struct {
@@ -16,7 +16,7 @@ type info struct {
 	Version     string
 }
 
-type path struct {
+type route struct {
 	Get *method
 }
 

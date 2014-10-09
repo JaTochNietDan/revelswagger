@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Swagger Route Not found</title>
+		<style type="text/css">
+		html, body {
+			margin: 0;
+			padding: 0;
+			font-family: Helvetica, Arial, Sans;
+			background: #EEEEEE;
+		}
+		.block {
+			padding: 20px;
+			border-bottom: 1px solid #aaa;
+		}
+		#header h1 {
+			font-weight: normal;
+			font-size: 28px;
+			margin: 0;
+		}
+		#more {
+			color: #666;
+			font-size: 80%;
+			border: none;
+		}
+		#header {
+			background: #98EFFF;
+		}
+		#header p {
+			color: #333;
+		}
+		#routes {
+			background: #f6f6f6;
+		}
+		#routes h2 {
+			font-weight: normal;
+			font-size: 18px;
+			margin: 0 0 10px 0;
+		}
+		#routes ol {
+
+		}
+		#routes li {
+			font-size: 14px;
+			font-family: monospace;
+			color: #333;
+		}
+	</style>
+	</head>
+	<body>
+		<div id="header" class="block">
+			<h1>
+				Couldn't find swagger route
+			</h1>
+			<p>
+				Couldn't find the following path in the swagger spec file: {{.path}}
+			</p>
+		</div>
+		<div id="routes" class="block">
+			<h2>These routes from spec.json have been tried, in this order:</h2>
+			<ol>
+				{{range $route, $element := .routes}}
+					<li>{{$route}}</li>
+				{{end}}
+			</ol>
+		</div>
+	</body>
+</html>
