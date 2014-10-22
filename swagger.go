@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/howeyc/fsnotify"
@@ -78,6 +79,8 @@ func watchSpecFile() {
 }
 
 func Filter(c *revel.Controller, fc []revel.Filter) {
+	c.Request.URL.Path = strings.ToLower(c.Request.URL.Path)
+
 	var route *revel.RouteMatch = revel.MainRouter.Route(c.Request.Request)
 
 	if route == nil {
