@@ -29,8 +29,14 @@ func init() {
 
 func loadSpecFile() {
 	spec = Specification{}
+    specPath := "/conf/spec.json"
 
-	content, err := ioutil.ReadFile(revel.BasePath + "\\conf\\spec.json")
+
+	if runtime.GOOS == "windows" {
+        specPath = "\\conf\\spec.json"
+    }
+
+	content, err := ioutil.ReadFile(revel.BasePath + specPath)
 
 	if err != nil {
 		fmt.Println("[SWAGGER]: Couldn't load spec.json.", err)
@@ -64,7 +70,12 @@ func watchSpecFile() {
 		}
 	}()
 
-	err = watcher.Watch(revel.BasePath + "\\conf\\spec.json")
+    specPath := "/conf/spec.json"
+    if runtime.GOOS == "windows" {
+        specPath = "\\conf\\spec.json"
+    }
+
+	err = watcher.Watch(revel.BasePath + specPath)
 
 	if err != nil {
 		fmt.Println("[SWAGGER]: Error watching spec file:", err)
